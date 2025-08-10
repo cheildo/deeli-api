@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/cheildo/deeli-api/internal/article"
+	"github.com/cheildo/deeli-api/internal/auth"
 	"github.com/cheildo/deeli-api/internal/user"
 	"github.com/cheildo/deeli-api/pkg/config"
 	"github.com/cheildo/deeli-api/pkg/database"
@@ -18,9 +19,22 @@ func main() {
 
 	r := gin.Default()
 
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
-	})
+	// Repositories
+	userRepo := user.NewRepository()
+
+	// Handlers
+	userHandler := user.NewHandler(userRepo)
+
+	// Public routes
+	r.POST("/signup", userHandler.Signup)
+	r.POST("/login", userHandler.Login)
+
+	// Authenticated routes
+	authRoutes := r.Group("/")
+	authRoutes.Use(auth.Middleware())
+	{
+		authRoutes.GET("/me", userHandler.GetMe)
+	}
 
 	// Start the server
 	serverAddress := config.Get("SERVER_ADDRESS")

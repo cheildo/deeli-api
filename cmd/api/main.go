@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 
+	"github.com/cheildo/deeli-api/internal/article"
+	"github.com/cheildo/deeli-api/internal/user"
 	"github.com/cheildo/deeli-api/pkg/config"
 	"github.com/cheildo/deeli-api/pkg/database"
 	"github.com/gin-gonic/gin"
@@ -12,7 +14,7 @@ func main() {
 	config.LoadConfig()
 
 	database.Connect()
-	database.Migrate()
+	database.Migrate(&user.User{}, &article.Article{}, &article.Rating{})
 
 	r := gin.Default()
 

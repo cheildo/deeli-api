@@ -3,8 +3,6 @@ package database
 import (
 	"log"
 
-	"github.com/cheildo/deeli-api/internal/article"
-	"github.com/cheildo/deeli-api/internal/user"
 	"github.com/cheildo/deeli-api/pkg/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -22,8 +20,8 @@ func Connect() {
 	log.Println("Database connection successful.")
 }
 
-func Migrate() {
-	err := DB.AutoMigrate(&user.User{}, &article.Article{}, &article.Rating{})
+func Migrate(models ...interface{}) {
+	err := DB.AutoMigrate(models...)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}

@@ -22,7 +22,7 @@ func NewWorker(repo article.Repository) *Worker {
 // Start runs the background worker loop. It should be called in a goroutine.
 func (w *Worker) Start() {
 	log.Println("Starting background worker...")
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
 	w.processFailedArticles()

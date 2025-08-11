@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/cheildo/deeli-api/internal/worker"
+	"github.com/cheildo/deeli-api/pkg/scraper"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -34,7 +34,6 @@ func (h *Handler) CreateArticle(c *gin.Context) {
 
 	userID := c.MustGet("userID").(uint)
 
-	// Create article in DB with "pending" status
 	article := &Article{
 		URL:    req.URL,
 		UserID: userID,
@@ -49,7 +48,7 @@ func (h *Handler) CreateArticle(c *gin.Context) {
 	// Start scraping in a background goroutine so the API returns immediately.
 	go func() {
 		log.Printf("Starting initial scrape for article ID %d", article.ID)
-		scrapedData, err := worker.ScrapeMetadata(article.URL)
+		scrapedData, err := scraper.ScrapeMetadata(article.URL)
 		if err != nil {
 			log.Printf("Scrape failed for article ID %d: %v", article.ID, err)
 			article.Status = StatusFailed
@@ -60,7 +59,6 @@ func (h *Handler) CreateArticle(c *gin.Context) {
 			article.Status = StatusCompleted
 		}
 
-		// Update the article in the database with the result of the scrape.
 		if err := h.repo.UpdateArticle(article); err != nil {
 			log.Printf("Failed to update article ID %d after scrape: %v", article.ID, err)
 		}
@@ -104,7 +102,6 @@ func (h *Handler) DeleteArticle(c *gin.Context) {
 		return
 	}
 
-	// The repository method is already secure, ensuring a user can only delete their own article.
 	if err := h.repo.DeleteArticle(uint(articleID), userID); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Article not found or you don't have permission to delete it"})

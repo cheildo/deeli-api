@@ -79,7 +79,6 @@ func (s *service) GetRecommendationsForUser(userID uint) ([]article.Article, err
 	for _, rating := range peerRatings {
 		// If the article is not one the user has already saved...
 		if !userSavedMap[rating.ArticleID] {
-			// ...increment its recommendation score.
 			recommendationScores[rating.ArticleID]++
 		}
 	}

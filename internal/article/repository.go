@@ -18,6 +18,11 @@ type Repository interface {
 	CreateOrUpdateRating(rating *Rating) error
 	GetRating(articleID, userID uint) (*Rating, error)
 	DeleteRating(articleID, userID uint) error
+	GetHighlyRatedArticleIDsForUser(userID uint, minScore int) ([]uint, error)
+	FindPeerUsers(userID uint, articleIDs []uint, minScore int) ([]uint, error)
+	GetHighlyRatedArticlesByUsers(userIDs []uint, minScore int) ([]Rating, error)
+	GetArticleIDsSavedByUser(userID uint) ([]uint, error)
+	GetArticlesByIDs(articleIDs []uint) ([]Article, error)
 }
 
 type repository struct{}
@@ -94,4 +99,52 @@ func (r *repository) DeleteRating(articleID, userID uint) error {
 		return gorm.ErrRecordNotFound
 	}
 	return nil
+}
+
+func (r *repository) GetHighlyRatedArticleIDsForUser(userID uint, minScore int) ([]uint, error) {
+	var articleIDs []uint
+	err := database.DB.Model(&Rating{}).
+		Where("user_id = ? AND score >= ?", userID, minScore).
+		Pluck("article_id", &articleIDs).Error
+	return articleIDs, err
+}
+
+func (r *repository) FindPeerUsers(userID uint, articleIDs []uint, minScore int) ([]uint, error) {
+	var peerIDs []uint
+	if len(articleIDs) == 0 {
+		return peerIDs, nil
+	}
+	err := database.DB.Model(&Rating{}).
+		Distinct("user_id").
+		Where("user_id != ? AND article_id IN ? AND score >= ?", userID, articleIDs, minScore).
+		Pluck("user_id", &peerIDs).Error
+	return peerIDs, err
+}
+
+func (r *repository) GetHighlyRatedArticlesByUsers(userIDs []uint, minScore int) ([]Rating, error) {
+	var ratings []Rating
+	if len(userIDs) == 0 {
+		return ratings, nil
+	}
+	err := database.DB.Model(&Rating{}).
+		Where("user_id IN ? AND score >= ?", userIDs, minScore).
+		Find(&ratings).Error
+	return ratings, err
+}
+
+func (r *repository) GetArticleIDsSavedByUser(userID uint) ([]uint, error) {
+	var articleIDs []uint
+	err := database.DB.Model(&Article{}).
+		Where("user_id = ?", userID).
+		Pluck("id", &articleIDs).Error
+	return articleIDs, err
+}
+
+func (r *repository) GetArticlesByIDs(articleIDs []uint) ([]Article, error) {
+	var articles []Article
+	if len(articleIDs) == 0 {
+		return articles, nil
+	}
+	err := database.DB.Where("id IN ?", articleIDs).Find(&articles).Error
+	return articles, err
 }
